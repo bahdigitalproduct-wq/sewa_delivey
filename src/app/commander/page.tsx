@@ -2,11 +2,10 @@
 
 import { ArrowLeft, MapPin, Navigation, Package, Wallet, CreditCard, Banknote, Loader2 } from 'lucide-react';
 import Link from 'next/link';
-import BottomNav from '@/components/BottomNav';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 
@@ -56,7 +55,7 @@ export default function CommanderPage() {
           const { latitude, longitude } = position.coords;
           setValue('pickup_address', `Ma position: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
         },
-        (error) => {
+        () => {
           setIsLocating(false);
           setLocationError("Impossible de récupérer la position.");
         }
