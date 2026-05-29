@@ -10,8 +10,17 @@ export default function FlotteAdmin() {
   const [potentialRiders, setPotentialRiders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [modalTab, setModalTab] = useState<'promote' | 'create'>('promote');
   const [editingLocationId, setEditingLocationId] = useState<string | null>(null);
   const [tempLocation, setTempLocation] = useState<string>('');
+
+  // États pour le formulaire de création
+  const [newRiderName, setNewRiderName] = useState('');
+  const [newRiderEmail, setNewRiderEmail] = useState('');
+  const [newRiderPassword, setNewRiderPassword] = useState('');
+  const [newRiderPhone, setNewRiderPhone] = useState('');
+  const [isCreating, setIsCreating] = useState(false);
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
 
   const fetchUsers = async () => {
     const { data: ridersData } = await supabase.from('profiles').select('*').eq('role', 'rider');
@@ -47,6 +56,65 @@ export default function FlotteAdmin() {
     } else {
       alert("Erreur lors de la mise à jour de la localisation.");
       setLoading(false);
+    }
+  };
+
+  const handleCreateRider = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsCreating(true);
+    
+    try {
+      // 1. On crée un client Supabase temporaire qui ne sauvegarde pas la session
+      // Cela évite de déconnecter l'Admin actuel !
+      const { createClient } = await import('@supabase/supabase-js');
+      const tempClient = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        { auth: { persistSession: false, autoRefreshToken: false } }
+      );
+
+      // 2. Création de l'utilisateur
+      const { data, error } = await tempClient.auth.signUp({
+        email: newRiderEmail,
+        password: newRiderPassword,
+        options: {
+          data: {
+            full_name: newRiderName,
+            phone: newRiderPhone,
+            role: 'rider'
+          }
+        }
+      });
+
+      if (error) throw error;
+
+      // 3. Si un profil est créé via Trigger, on force la mise à jour du rôle
+      if (data.user) {
+        await supabase.from('profiles').update({ 
+          role: 'rider', 
+          full_name: newRiderName, 
+          phone: newRiderPhone 
+        }).eq('id', data.user.id);
+      }
+
+      setShowSuccessMessage(true);
+      
+      // Fermeture automatique après 2.5 secondes et rafraîchissement des données
+      setTimeout(async () => {
+        await fetchUsers(); // On met à jour la liste ici pour laisser le temps au trigger SQL de s'exécuter
+        setShowModal(false);
+        setShowSuccessMessage(false);
+        setNewRiderName('');
+        setNewRiderEmail('');
+        setNewRiderPassword('');
+        setNewRiderPhone('');
+      }, 2500);
+
+    } catch (err: any) {
+      console.error(err);
+      alert("Erreur lors de la création : " + err.message);
+    } finally {
+      setIsCreating(false);
     }
   };
 
@@ -185,39 +253,106 @@ export default function FlotteAdmin() {
         <div className="fixed inset-0 bg-black/50 z-[1000] flex items-center justify-center p-4 backdrop-blur-sm">
           <div className="bg-white rounded-3xl w-full max-w-lg shadow-xl overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-              <h2 className="text-xl font-black text-gray-900">Promouvoir un coursier</h2>
+              <h2 className="text-xl font-black text-gray-900">Nouveau coursier</h2>
               <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-900 bg-white p-2 rounded-full shadow-sm">
                 <X className="w-5 h-5" />
               </button>
             </div>
+
+            {showSuccessMessage ? (
+              <div className="p-12 text-center flex flex-col items-center justify-center animate-in zoom-in-50 duration-500">
+                <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mb-6 shadow-inner">
+                  <CheckCircle2 className="w-12 h-12 text-green-500" />
+                </div>
+                <h3 className="text-3xl font-black text-gray-900 mb-2">Succès !</h3>
+                <p className="text-gray-500 font-medium">Le coursier a été créé et ajouté à la flotte.</p>
+                <div className="mt-8 flex justify-center">
+                  <Loader2 className="w-6 h-6 animate-spin text-gray-300" />
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="flex border-b border-gray-100">
+                  <button 
+                    onClick={() => setModalTab('promote')} 
+                    className={`flex-1 py-3 text-sm font-bold border-b-2 transition-colors ${modalTab === 'promote' ? 'border-sewa-red text-sewa-red bg-red-50/50' : 'border-transparent text-gray-500 hover:bg-gray-50'}`}
+                  >
+                    Promouvoir un utilisateur
+                  </button>
+                  <button 
+                    onClick={() => setModalTab('create')} 
+                    className={`flex-1 py-3 text-sm font-bold border-b-2 transition-colors ${modalTab === 'create' ? 'border-sewa-red text-sewa-red bg-red-50/50' : 'border-transparent text-gray-500 hover:bg-gray-50'}`}
+                  >
+                    Créer un compte
+                  </button>
+                </div>
             
             <div className="p-6">
-              <p className="text-sm text-gray-500 mb-4">Sélectionnez un utilisateur existant pour le promouvoir au rang de coursier. Seuls les comptes standards apparaissent ici.</p>
-              
-              <div className="space-y-3 max-h-[50vh] overflow-y-auto">
-                {potentialRiders.map(user => (
-                  <div key={user.id} className="flex items-center justify-between p-3 border border-gray-100 rounded-2xl hover:border-sewa-red/30 transition-colors">
+              {modalTab === 'promote' && (
+                <>
+                  <p className="text-sm text-gray-500 mb-4">Sélectionnez un utilisateur existant pour le promouvoir au rang de coursier. Seuls les comptes standards apparaissent ici.</p>
+                  
+                  <div className="space-y-3 max-h-[40vh] overflow-y-auto">
+                    {potentialRiders.map(user => (
+                      <div key={user.id} className="flex items-center justify-between p-3 border border-gray-100 rounded-2xl hover:border-sewa-red/30 transition-colors">
+                        <div>
+                          <p className="font-bold text-gray-900">{user.full_name || 'Utilisateur Anonyme'}</p>
+                          <p className="text-xs text-gray-500">{user.phone || 'Pas de numéro'}</p>
+                        </div>
+                        <button 
+                          onClick={() => updateRole(user.id, 'rider')}
+                          className="bg-gray-900 text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-sewa-red flex items-center gap-1 transition-colors"
+                        >
+                          <CheckCircle2 className="w-4 h-4" /> Promouvoir
+                        </button>
+                      </div>
+                    ))}
+                    
+                    {potentialRiders.length === 0 && (
+                      <div className="text-center py-6 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
+                        <p className="text-gray-500 text-sm font-medium">Aucun utilisateur standard trouvé.</p>
+                        <button onClick={() => setModalTab('create')} className="mt-3 bg-sewa-red text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-red-700 transition-colors">
+                          Créer un compte coursier directement
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
+
+              {modalTab === 'create' && (
+                <form onSubmit={handleCreateRider} className="space-y-5">
+                  <p className="text-sm text-gray-500 mb-2">Créez directement un profil pour votre nouveau coursier. Ses accès lui permettront de se connecter à l'app.</p>
+                  
+                  <div>
+                    <label className="text-xs font-black text-gray-400 uppercase tracking-wider">Nom complet</label>
+                    <input required value={newRiderName} onChange={e => setNewRiderName(e.target.value)} type="text" placeholder="Ex: Mamadou Diallo" className="w-full mt-1.5 bg-white border-2 border-gray-200 rounded-xl px-4 py-3 text-sm font-bold text-gray-900 placeholder:text-gray-300 focus:border-sewa-red focus:ring-4 focus:ring-red-500/10 focus:outline-none transition-all shadow-sm" />
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <p className="font-bold text-gray-900">{user.full_name || 'Utilisateur Anonyme'}</p>
-                      <p className="text-xs text-gray-500">{user.phone || 'Pas de numéro'}</p>
+                      <label className="text-xs font-black text-gray-400 uppercase tracking-wider">Email (identifiant)</label>
+                      <input required value={newRiderEmail} onChange={e => setNewRiderEmail(e.target.value)} type="email" placeholder="livreur@sewa.com" className="w-full mt-1.5 bg-white border-2 border-gray-200 rounded-xl px-4 py-3 text-sm font-bold text-gray-900 placeholder:text-gray-300 focus:border-sewa-red focus:ring-4 focus:ring-red-500/10 focus:outline-none transition-all shadow-sm" />
                     </div>
-                    <button 
-                      onClick={() => updateRole(user.id, 'rider')}
-                      className="bg-gray-900 text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-sewa-red flex items-center gap-1 transition-colors"
-                    >
-                      <CheckCircle2 className="w-4 h-4" /> Promouvoir
-                    </button>
+                    <div>
+                      <label className="text-xs font-black text-gray-400 uppercase tracking-wider">Téléphone</label>
+                      <input required value={newRiderPhone} onChange={e => setNewRiderPhone(e.target.value)} type="tel" placeholder="+224..." className="w-full mt-1.5 bg-white border-2 border-gray-200 rounded-xl px-4 py-3 text-sm font-bold text-gray-900 placeholder:text-gray-300 focus:border-sewa-red focus:ring-4 focus:ring-red-500/10 focus:outline-none transition-all shadow-sm" />
+                    </div>
                   </div>
-                ))}
-                
-                {potentialRiders.length === 0 && (
-                  <div className="text-center py-6 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
-                    <p className="text-gray-500 text-sm font-medium">Aucun utilisateur standard trouvé.</p>
-                    <p className="text-xs text-gray-400 mt-1">Créez d'abord un compte via l'application cliente.</p>
+
+                  <div>
+                    <label className="text-xs font-black text-gray-400 uppercase tracking-wider">Mot de passe provisoire</label>
+                    <input required value={newRiderPassword} onChange={e => setNewRiderPassword(e.target.value)} type="text" placeholder="Minimum 6 caractères" minLength={6} className="w-full mt-1.5 bg-white border-2 border-gray-200 rounded-xl px-4 py-3 text-sm font-bold text-gray-900 placeholder:text-gray-300 focus:border-sewa-red focus:ring-4 focus:ring-red-500/10 focus:outline-none transition-all shadow-sm" />
                   </div>
-                )}
-              </div>
+
+                  <button disabled={isCreating} type="submit" className="w-full bg-sewa-red text-white py-3.5 rounded-xl font-black text-base shadow-xl shadow-red-500/30 hover:bg-red-700 hover:-translate-y-0.5 transition-all flex items-center justify-center mt-4 disabled:opacity-50 disabled:hover:translate-y-0">
+                    {isCreating ? <Loader2 className="w-5 h-5 animate-spin" /> : "Créer le coursier"}
+                  </button>
+                </form>
+              )}
             </div>
+            </>
+          )}
           </div>
         </div>
       )}

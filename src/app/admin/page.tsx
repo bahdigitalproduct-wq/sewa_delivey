@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { PackageSearch, DollarSign, Activity, Users, Clock, Loader2, ArrowUpRight, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
+import { motion } from 'framer-motion';
 
 export default function SuperDashboard() {
   const supabase = createClient();
@@ -187,18 +188,44 @@ export default function SuperDashboard() {
             </select>
           </div>
           
-          <div className="h-64 flex items-end justify-between gap-2 px-2">
-            {chartData.map((val, idx) => (
-              <div key={idx} className="w-full flex flex-col items-center gap-2 group">
-                <div 
-                  className="w-full max-w-[40px] bg-red-100 rounded-t-lg relative group-hover:bg-sewa-red transition-colors duration-300"
-                  style={{ height: `${(val / maxVal) * 100}%` }}
-                >
-                  <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-xs font-bold py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity">
-                    {val}
-                  </div>
+          <div className="h-64 relative flex items-end justify-between px-2 pt-10 pb-6 mt-4 bg-gray-50/50 rounded-2xl border border-gray-100 overflow-visible">
+            {/* Lignes de repère (Grid Lines) */}
+            <div className="absolute inset-0 flex flex-col justify-between pb-10 pointer-events-none px-4 pt-4">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="w-full border-t border-gray-200 border-dashed opacity-50 relative">
+                  {i === 0 && <span className="absolute -top-3 -left-2 text-[10px] font-bold text-gray-300">{maxVal}</span>}
+                  {i === 4 && <span className="absolute -top-3 -left-2 text-[10px] font-bold text-gray-300">0</span>}
                 </div>
-                <span className="text-xs font-bold text-gray-400">J-{6-idx}</span>
+              ))}
+            </div>
+            
+            {/* Barres du graphique */}
+            {chartData.map((val, idx) => (
+              <div key={idx} className="w-full flex flex-col items-center justify-end h-full relative z-10 group cursor-pointer">
+                <div className="w-full max-w-[48px] h-full flex items-end justify-center px-1">
+                  <motion.div 
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: `${Math.max((val / maxVal) * 100, 8)}%`, opacity: 1 }}
+                    transition={{ duration: 0.8, delay: idx * 0.1, type: "spring", stiffness: 60 }}
+                    className={`w-full rounded-t-xl relative transition-all duration-300 shadow-sm ${
+                      idx === 6 
+                        ? 'bg-gradient-to-t from-red-600 to-sewa-red shadow-[0_0_20px_rgba(220,38,38,0.4)] group-hover:brightness-110' 
+                        : 'bg-gradient-to-t from-red-100 to-red-300 group-hover:from-red-200 group-hover:to-red-400'
+                    }`}
+                  >
+                    {/* Infobulle premium */}
+                    <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-xs font-black py-2 px-3 rounded-xl opacity-0 group-hover:opacity-100 transition-all transform group-hover:-translate-y-2 whitespace-nowrap shadow-2xl pointer-events-none flex flex-col items-center">
+                      <span className="text-[10px] text-gray-400 font-medium uppercase tracking-wider mb-0.5">{idx === 6 ? "Aujourd'hui" : `Il y a ${6-idx} jour${6-idx > 1 ? 's' : ''}`}</span>
+                      {val} course{val > 1 ? 's' : ''}
+                      {/* Flèche de l'infobulle */}
+                      <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-gray-900 rotate-45"></div>
+                    </div>
+                  </motion.div>
+                </div>
+                {/* Labels de l'Axe X */}
+                <span className={`absolute -bottom-6 text-[11px] font-black tracking-wider ${idx === 6 ? 'text-sewa-red bg-red-50 px-2 py-0.5 rounded-md' : 'text-gray-400'}`}>
+                  {idx === 6 ? "AUJ." : `J-${6-idx}`}
+                </span>
               </div>
             ))}
           </div>

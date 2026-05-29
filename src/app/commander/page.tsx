@@ -8,6 +8,9 @@ import * as z from 'zod';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+import dynamic from 'next/dynamic';
+
+const MapComponent = dynamic(() => import('@/components/MapComponent'), { ssr: false });
 
 const QUARTIERS_CONAKRY = [
   "Aéroport", "Almamya", "Ansoumania", "Aviation", "Baïlobaya", "Bambéto", "Bantounka", "Belle-Vue", "Bonfi", "Boulbinet", "Boussoura", 
@@ -58,15 +61,16 @@ export default function CommanderPage() {
     fetchSettings();
   }, [supabase]);
 
-  const { register, handleSubmit, setValue, formState: { errors } } = useForm<OrderFormValues>({
+  const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<OrderFormValues>({
     resolver: zodResolver(orderSchema)
   });
-  
-  let urgencyMultiplier = 1;
-  if (urgency === 'express') urgencyMultiplier = 1.5;
-  if (urgency === 'vip') urgencyMultiplier = 2;
 
-  const totalPrice = Math.round((appSettings.base_price + (distance * appSettings.price_per_km)) * urgencyMultiplier * appSettings.surge_multiplier);
+  type Coords = { lat: number; lng: number };
+  const [pickupCoords, setPickupCoords] = useState<Coords | null>(null);
+  const [deliveryCoords, setDeliveryCoords] = useState<Coords | null>(null);
+
+  const watchPickupAddress = watch('pickup_address');
+  const watchDeliveryAddress = watch('delivery_address');
 
   const handleGetLocation = () => {
     setIsLocating(true);
@@ -76,6 +80,7 @@ export default function CommanderPage() {
         (position) => {
           setIsLocating(false);
           const { latitude, longitude } = position.coords;
+          setPickupCoords({ lat: latitude, lng: longitude });
           setValue('pickup_address', `Ma position: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
         },
         () => {
@@ -88,6 +93,70 @@ export default function CommanderPage() {
       setLocationError("Géolocalisation non supportée.");
     }
   };
+
+  // Auto-detect location on mount
+  useEffect(() => {
+    handleGetLocation();
+  }, []);
+
+  // Geocode delivery address
+  useEffect(() => {
+    if (!watchDeliveryAddress || watchDeliveryAddress.length < 3) {
+      setDeliveryCoords(null);
+      return;
+    }
+    const timeoutId = setTimeout(async () => {
+      try {
+        let response = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(watchDeliveryAddress + ', Conakry, Guinea')}&format=json&limit=1`);
+        let data = await response.json();
+        
+        if (!data || data.length === 0) {
+          response = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(watchDeliveryAddress + ', Guinea')}&format=json&limit=1`);
+          data = await response.json();
+        }
+
+        if (data && data.length > 0) {
+          setDeliveryCoords({ lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) });
+        }
+      } catch (error) {
+        console.error('Geocoding error:', error);
+      }
+    }, 1000); // Debounce 1s
+
+    return () => clearTimeout(timeoutId);
+  }, [watchDeliveryAddress]);
+
+  // Geocode pickup address
+  useEffect(() => {
+    if (!watchPickupAddress || watchPickupAddress.length < 3 || watchPickupAddress.startsWith('Position:') || watchPickupAddress.startsWith('Ma position:')) {
+      return;
+    }
+    const timeoutId = setTimeout(async () => {
+      try {
+        let response = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(watchPickupAddress + ', Conakry, Guinea')}&format=json&limit=1`);
+        let data = await response.json();
+        
+        if (!data || data.length === 0) {
+          response = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(watchPickupAddress + ', Guinea')}&format=json&limit=1`);
+          data = await response.json();
+        }
+
+        if (data && data.length > 0) {
+          setPickupCoords({ lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) });
+        }
+      } catch (error) {
+        console.error('Pickup Geocoding error:', error);
+      }
+    }, 1000);
+
+    return () => clearTimeout(timeoutId);
+  }, [watchPickupAddress]);
+
+  let urgencyMultiplier = 1;
+  if (urgency === 'express') urgencyMultiplier = 1.5;
+  if (urgency === 'vip') urgencyMultiplier = 2;
+
+  const totalPrice = Math.round((appSettings.base_price + (distance * appSettings.price_per_km)) * urgencyMultiplier * appSettings.surge_multiplier);
 
   const onSubmit = async (data: OrderFormValues) => {
     setIsSubmitting(true);
@@ -129,19 +198,35 @@ export default function CommanderPage() {
     }
   };
 
+  const handlePickupChange = (coords: {lat: number, lng: number}) => {
+    setPickupCoords(coords);
+    setValue('pickup_address', `Position: ${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)}`);
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50 pb-20 font-sans">
-      {/* Page Title */}
-      <div className="bg-sewa-red text-white p-4 shadow-sm">
-        <div className="flex items-center gap-4 max-w-lg mx-auto">
-          <Link href="/" className="w-10 h-10 rounded-full hover:bg-white/10 flex items-center justify-center transition-colors">
-            <ArrowLeft className="w-6 h-6" />
+    <div className="flex-1 flex flex-col md:flex-row bg-gray-50 pb-20 md:pb-0 overflow-hidden min-h-screen font-sans">
+      
+      {/* Map Section */}
+      <div className="h-[45vh] md:h-auto md:flex-1 relative z-0">
+        <MapComponent 
+          pickup={pickupCoords} 
+          delivery={deliveryCoords} 
+          onPickupChange={handlePickupChange}
+        />
+        <div className="absolute top-4 left-4 z-[400]">
+          <Link href="/" className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-md hover:bg-gray-50 transition-colors">
+            <ArrowLeft className="w-5 h-5 text-gray-700" />
           </Link>
-          <h1 className="text-xl font-bold">Nouvelle livraison</h1>
         </div>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="p-4 space-y-6 max-w-lg mx-auto">
+      {/* Form Section */}
+      <div className="flex-1 md:w-[450px] md:flex-none bg-white md:shadow-[-10px_0_30px_rgba(0,0,0,0.05)] z-10 flex flex-col overflow-y-auto">
+        <div className="bg-sewa-red text-white p-4 shadow-sm shrink-0">
+          <h1 className="text-xl font-bold text-center">Nouvelle livraison</h1>
+        </div>
+
+        <form onSubmit={handleSubmit(onSubmit)} className="p-4 space-y-6">
         
         {/* Addresses */}
         <section className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
@@ -159,7 +244,7 @@ export default function CommanderPage() {
                   {isLocating ? "Recherche..." : "Ma position"}
                 </button>
               </div>
-              <input {...register('pickup_address')} type="text" placeholder="Adresse de retrait..." className={`w-full bg-gray-50 border ${errors.pickup_address ? 'border-red-500' : 'border-gray-200'} rounded-xl px-4 py-3 text-sm text-gray-900 font-medium placeholder:text-gray-400 focus:outline-none focus:border-sewa-red transition-colors`} />
+              <input {...register('pickup_address')} list="quartiers-conakry" type="text" placeholder="Quartier ou adresse de retrait..." className={`w-full bg-gray-50 border ${errors.pickup_address ? 'border-red-500' : 'border-gray-200'} rounded-xl px-4 py-3 text-sm text-gray-900 font-medium placeholder:text-gray-400 focus:outline-none focus:border-sewa-red transition-colors`} />
               {errors.pickup_address && <p className="text-xs text-red-500 mt-1">{errors.pickup_address.message}</p>}
               {locationError && <p className="text-xs text-orange-500 mt-1">{locationError}</p>}
             </div>
@@ -266,7 +351,7 @@ export default function CommanderPage() {
           </button>
         </div>
       </form>
-
     </div>
+  </div>
   );
 }
