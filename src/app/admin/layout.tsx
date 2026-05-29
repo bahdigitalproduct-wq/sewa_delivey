@@ -39,8 +39,8 @@ export default async function AdminLayout({
       {/* Sidebar Fixe */}
       <AdminSidebar />
       
-      {/* Contenu principal (avec marge pour la sidebar) */}
-      <div className="flex-1 ml-64 p-8">
+      {/* Contenu principal (avec marge pour la sidebar sur desktop, marge en bas sur mobile) */}
+      <div className="flex-1 md:ml-64 mb-16 md:mb-0 p-4 md:p-8 w-full overflow-x-hidden">
         <div className="max-w-7xl mx-auto h-full">
           {children}
         </div>
