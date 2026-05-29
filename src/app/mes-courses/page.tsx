@@ -12,35 +12,62 @@ export default function MesCoursesPage() {
   const supabase = createClient();
 
   useEffect(() => {
+    let channel: any;
+
     const fetchData = async () => {
-      // 1. Récupérer l'utilisateur connecté
       const { data: { user } } = await supabase.auth.getUser();
       
       if (user) {
-        // 2. Récupérer son profil
-        const { data: userProfile } = await supabase
+        // Exécution en parallèle pour réduire le temps de chargement par deux
+        const fetchProfile = supabase
           .from('profiles')
           .select('*')
           .eq('id', user.id)
-          .single();
-        if (userProfile) setProfile(userProfile);
+          .single()
+          .then(({ data }) => { if (data) setProfile(data); });
 
-        // 3. Récupérer ses commandes
-        const { data: userOrders } = await supabase
-          .from('orders')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false });
-        
-        if (userOrders) setCourses(userOrders);
+        await Promise.all([fetchProfile, fetchOrders(user.id)]);
+
+        // Abonnement Supabase Realtime pour rafraîchir la page automatiquement
+        channel = supabase
+          .channel(`realtime_user_orders_${user.id}`)
+          .on(
+            'postgres_changes',
+            {
+              event: '*', // INSERT, UPDATE, DELETE
+              schema: 'public',
+              table: 'orders',
+              filter: `user_id=eq.${user.id}`
+            },
+            () => {
+              console.log('Mise à jour de la commande détectée, rafraîchissement...');
+              fetchOrders(user.id);
+            }
+          )
+          .subscribe();
       }
       setLoading(false);
     };
 
+    const fetchOrders = async (userId: string) => {
+      const { data: userOrders } = await supabase
+        .from('orders')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+      
+      if (userOrders) setCourses(userOrders);
+    };
+
     fetchData();
+
+    return () => {
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
+    };
   }, [supabase]);
 
-  const totalDepense = courses.reduce((acc, curr) => acc + Number(curr.price), 0);
   const coursesLivrees = courses.filter(c => c.status === 'delivered').length;
   const coursesActives = courses.filter(c => c.status !== 'delivered' && c.status !== 'cancelled').length;
 
@@ -59,34 +86,24 @@ export default function MesCoursesPage() {
     <div className="flex-1 bg-gray-50 font-sans pb-20 md:pb-0 min-h-screen">
       <main className="max-w-6xl mx-auto px-4 py-6 md:py-8">
         
-        {/* Toggle Mode */}
-        <div className="flex justify-center mb-6 md:mb-8">
-          <div className="bg-white rounded-full p-1 shadow-sm border border-gray-100 inline-flex overflow-x-auto max-w-full">
-            <button className="px-4 md:px-6 py-2 rounded-full text-sewa-red font-bold text-xs flex items-center gap-2 bg-red-50 whitespace-nowrap transition-colors">
-              <User className="w-4 h-4" /> ESPACE EXPÉDITEUR
-            </button>
-            <button className="px-4 md:px-6 py-2 rounded-full text-gray-500 font-medium text-xs flex items-center gap-2 hover:bg-gray-50 whitespace-nowrap transition-colors">
-              <Package className="w-4 h-4" /> MODE COURSIER
-            </button>
-          </div>
-        </div>
-
-        {/* Stats Row */}
+        {/* Stats Row & Quick Actions */}
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 mb-6 md:mb-8">
-          <div className="col-span-2 md:col-span-1 bg-white rounded-3xl p-4 md:p-6 shadow-sm border border-gray-100">
-            <p className="text-xs text-gray-400 font-bold tracking-wider mb-1 md:mb-2 uppercase">Compte dépensé</p>
-            <h3 className="text-2xl md:text-3xl font-black text-gray-900 mb-1">{loading ? <Loader2 className="w-6 h-6 animate-spin text-gray-300" /> : totalDepense.toLocaleString('fr-FR')} <span className="text-xs md:text-sm font-bold">GNF</span></h3>
-            <p className="text-[10px] md:text-xs text-gray-400">Totalité des courses commandées</p>
+          <Link href="/commander" className="col-span-2 md:col-span-1 bg-sewa-red rounded-3xl p-4 md:p-6 shadow-sm border border-red-500 flex flex-col justify-center items-center text-center hover:bg-red-700 transition-colors group">
+            <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+              <Package className="w-6 h-6 text-white" />
+            </div>
+            <h3 className="text-xl font-black text-white mb-1">Nouvelle Course</h3>
+            <p className="text-[10px] md:text-xs text-white/80">Commander un livreur</p>
+          </Link>
+          <div className="bg-white rounded-3xl p-4 md:p-6 shadow-sm border border-gray-100 flex flex-col justify-center items-center text-center relative overflow-hidden group hover:border-green-100 transition-colors">
+            <div className="absolute inset-0 bg-gradient-to-br from-green-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            <h3 className="text-3xl md:text-4xl font-black text-gray-900 mb-1 relative z-10">{loading ? '...' : coursesLivrees}</h3>
+            <p className="text-[10px] md:text-xs text-gray-400 font-bold uppercase tracking-wider relative z-10">Livrées</p>
           </div>
-          <div className="bg-white rounded-3xl p-4 md:p-6 shadow-sm border border-gray-100">
-            <p className="text-[10px] md:text-xs text-gray-400 font-bold tracking-wider mb-1 md:mb-2 uppercase">Effectuées</p>
-            <h3 className="text-2xl md:text-3xl font-black text-gray-900 mb-1">{loading ? '...' : coursesLivrees}</h3>
-            <p className="text-[10px] md:text-xs text-gray-400">Livrées</p>
-          </div>
-          <div className="bg-white rounded-3xl p-4 md:p-6 shadow-sm border border-gray-100">
-            <p className="text-[10px] md:text-xs text-gray-400 font-bold tracking-wider mb-1 md:mb-2 uppercase">En cours</p>
-            <h3 className="text-2xl md:text-3xl font-black text-sewa-red mb-1">{loading ? '...' : coursesActives}</h3>
-            <p className="text-[10px] md:text-xs text-gray-400">Actives</p>
+          <div className="bg-white rounded-3xl p-4 md:p-6 shadow-sm border border-gray-100 flex flex-col justify-center items-center text-center relative overflow-hidden group hover:border-red-100 transition-colors">
+            <div className="absolute inset-0 bg-gradient-to-br from-red-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            <h3 className="text-3xl md:text-4xl font-black text-sewa-red mb-1 relative z-10">{loading ? '...' : coursesActives}</h3>
+            <p className="text-[10px] md:text-xs text-gray-400 font-bold uppercase tracking-wider relative z-10">En cours</p>
           </div>
         </div>
 
@@ -145,9 +162,8 @@ export default function MesCoursesPage() {
                       </p>
                     </div>
                     <div className="flex items-center justify-between sm:justify-end gap-4 w-full sm:w-auto">
-                      <div className="text-left sm:text-right">
-                        <p className="font-bold text-gray-900 text-sm mb-0.5">{Number(course.price).toLocaleString('fr-FR')} GNF</p>
-                        <p className={`text-[10px] font-bold uppercase tracking-wider ${course.status === 'delivered' ? 'text-green-500' : 'text-orange-500'}`}>
+                      <div className="text-left sm:text-right flex items-center h-full">
+                        <p className={`text-[10px] md:text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-full ${course.status === 'delivered' ? 'bg-green-50 text-green-600' : 'bg-orange-50 text-orange-600'}`}>
                           {translateStatus(course.status)}
                         </p>
                       </div>

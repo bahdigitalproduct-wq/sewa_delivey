@@ -11,6 +11,10 @@ export default function BottomNav() {
   if (pathname === '/commander') active = 'commander';
   else if (pathname === '/mes-courses') active = 'profil';
 
+  if (pathname.startsWith('/admin')) {
+    return null;
+  }
+
   return (
     <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 flex justify-around items-center p-3 z-[500] shadow-[0_-10px_20px_rgba(0,0,0,0.03)] pb-safe">
       <Link href="/" className={`flex flex-col items-center gap-1 ${active === 'accueil' ? 'text-sewa-red' : 'text-gray-400'}`}>

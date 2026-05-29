@@ -5,9 +5,22 @@ import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+
+const QUARTIERS_CONAKRY = [
+  "Aéroport", "Almamya", "Ansoumania", "Aviation", "Baïlobaya", "Bambéto", "Bantounka", "Belle-Vue", "Bonfi", "Boulbinet", "Boussoura", 
+  "Camayenne", "Cameroun", "Camp Alpha Yaya", "Carrière", "Cimenterie", "Cité Enco 5", "Cité Solidarité", "Coléah", "Coronthie", "Cosa", "Coyah", 
+  "Dabondy", "Dabompa", "Dar-Es-Salam", "Démoudoula", "Dixinn Bora", "Dixinn Gare", "Dixinn Port", "Domino", "Dubréka", 
+  "Enco 5", "Entag", "Fassia", "Fotoba", "Foulamadina", "Gbessia", "Gbéssia Cité", "Gbéssia Port", "Gomboyah", 
+  "Hafia", "Hamdallaye", "Hermakono", "Kagbelen", "Kakimbo", "Kaporo", "Kaporo-Rails", "Kassa", "Kassonya", "Keitayah", "Kénien", 
+  "Kipé", "Kipé-Dadya", "Kissosso", "KM36", "Kobaya", "Koloma", "Kouléwondy", "Kountia", "Lambanyi", "Landréah", "Lansanayah", 
+  "Madina", "Madina Marché", "Mafanco", "Maneah", "Manquepas", "Matam", "Matoto Centre", "Minière", 
+  "Nongo", "Nongo-Taady", "Petit Simbaya", "Ratoma", "Samatara", "Sandervalia", "Sangoyah", "Sangoyah-Mosquée", "Sanoyah", "Siguiriya", 
+  "Simbaya", "Simbaya Gare", "Somayah", "Sonfonia", "Sonfonia Gare", "Sonfonia Lac", 
+  "T5", "T6", "T7", "T8", "T9", "T10", "Taouyah", "Taouyah Corniche", "Tombo", "Tombolia", "Touguiwondy", "Téminétaye", "Wanindara", "Yattaya", "Yimbaya"
+];
 
 // Zod Schema
 const orderSchema = z.object({
@@ -31,19 +44,29 @@ export default function CommanderPage() {
   const [isLocating, setIsLocating] = useState(false);
   const [locationError, setLocationError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [appSettings, setAppSettings] = useState({
+    base_price: 15000,
+    price_per_km: 2000,
+    surge_multiplier: 1.0
+  });
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      const { data } = await supabase.from('app_settings').select('*').eq('id', 1).single();
+      if (data) setAppSettings(data);
+    };
+    fetchSettings();
+  }, [supabase]);
 
   const { register, handleSubmit, setValue, formState: { errors } } = useForm<OrderFormValues>({
     resolver: zodResolver(orderSchema)
   });
-
-  const basePrice = 10000;
-  const pricePerKm = 1000;
   
   let urgencyMultiplier = 1;
   if (urgency === 'express') urgencyMultiplier = 1.5;
   if (urgency === 'vip') urgencyMultiplier = 2;
 
-  const totalPrice = Math.round((basePrice + (distance * pricePerKm)) * urgencyMultiplier);
+  const totalPrice = Math.round((appSettings.base_price + (distance * appSettings.price_per_km)) * urgencyMultiplier * appSettings.surge_multiplier);
 
   const handleGetLocation = () => {
     setIsLocating(true);
@@ -143,30 +166,18 @@ export default function CommanderPage() {
 
             <div>
               <label className="text-xs font-bold text-gray-500 uppercase mb-1 block">Livraison</label>
-              <input {...register('delivery_address')} type="text" placeholder="Adresse de livraison..." className={`w-full bg-gray-50 border ${errors.delivery_address ? 'border-red-500' : 'border-gray-200'} rounded-xl px-4 py-3 text-sm text-gray-900 font-medium placeholder:text-gray-400 focus:outline-none focus:border-sewa-red transition-colors`} />
+              <input {...register('delivery_address')} list="quartiers-conakry" type="text" placeholder="Quartier de livraison..." className={`w-full bg-gray-50 border ${errors.delivery_address ? 'border-red-500' : 'border-gray-200'} rounded-xl px-4 py-3 text-sm text-gray-900 font-medium placeholder:text-gray-400 focus:outline-none focus:border-sewa-red transition-colors`} />
+              <datalist id="quartiers-conakry">
+                {QUARTIERS_CONAKRY.map((quartier) => (
+                  <option key={quartier} value={quartier} />
+                ))}
+              </datalist>
               {errors.delivery_address && <p className="text-xs text-red-500 mt-1">{errors.delivery_address.message}</p>}
             </div>
           </div>
         </section>
 
-        {/* Distance Slider (Mock) */}
-        <section className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="font-bold text-gray-900 flex items-center gap-2">
-              <Navigation className="w-5 h-5 text-blue-500" /> 
-              Distance estimée
-            </h2>
-            <span className="font-black text-sewa-red">{distance} km</span>
-          </div>
-          <input 
-            type="range" 
-            min="1" 
-            max="30" 
-            value={distance} 
-            onChange={(e) => setDistance(Number(e.target.value))}
-            className="w-full accent-sewa-red"
-          />
-        </section>
+
 
         {/* Contacts */}
         <section className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
@@ -246,14 +257,12 @@ export default function CommanderPage() {
           </div>
         </section>
 
-        {/* Submit */}
         <div className="pt-4 pb-8">
-          <button disabled={isSubmitting} type="submit" className="w-full bg-gray-900 text-white rounded-2xl p-4 flex items-center justify-between font-bold hover:bg-gray-800 transition-colors shadow-xl shadow-gray-900/20 active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed">
+          <button disabled={isSubmitting} type="submit" className="w-full bg-sewa-red text-white rounded-2xl p-4 flex items-center justify-center font-bold hover:bg-red-700 transition-colors shadow-xl shadow-red-500/30 active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed">
             <span className="text-lg flex items-center gap-2">
               {isSubmitting && <Loader2 className="w-5 h-5 animate-spin" />}
               {isSubmitting ? 'Création en cours...' : 'Confirmer la commande'}
             </span>
-            <span className="text-xl text-sewa-yellow">{totalPrice.toLocaleString('fr-FR')} GNF</span>
           </button>
         </div>
       </form>

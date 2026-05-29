@@ -100,10 +100,7 @@ export default function TrackingPage() {
   };
   const isCurrent = (stepStatus: string) => order.status === stepStatus;
 
-  const handleUpdateStatus = async (newStatus: string) => {
-    const { error } = await supabase.from('orders').update({ status: newStatus }).eq('id', order.id);
-    if (error) alert("Erreur de mise à jour");
-  };
+
 
   return (
     <div className="flex-1 flex flex-col md:flex-row bg-gray-50 pb-20 md:pb-0 overflow-hidden min-h-screen">
@@ -133,23 +130,19 @@ export default function TrackingPage() {
           <div className="flex justify-between items-center border-b border-gray-100 pb-4 mb-4">
             <div>
               <p className="text-xs text-gray-500 mb-1">Commande N°</p>
-              <p className="text-lg md:text-xl font-black text-gray-900 truncate w-32 md:w-48" title={order.id}>{order.id.split('-')[0]}</p>
-            </div>
-            <div className="text-right">
-              <p className="text-xs text-gray-500 mb-1">Total</p>
-              <p className="text-lg md:text-xl font-black text-sewa-red">{Number(order.price).toLocaleString('fr-FR')} GNF</p>
+              <p className="text-lg md:text-xl font-black text-gray-900 truncate w-64" title={order.id}>{order.id.split('-')[0]}</p>
             </div>
           </div>
 
-          {/* Driver Info */}
+          {/* Info Client / Driver */}
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-sewa-red rounded-full flex items-center justify-center text-white shrink-0">
-                <span className="font-bold">AI</span>
+              <div className="w-12 h-12 bg-sewa-red rounded-full flex items-center justify-center text-white shrink-0 uppercase">
+                <span className="font-bold">{order.sender_address?.name?.substring(0, 2) || 'CL'}</span>
               </div>
               <div>
-                <h4 className="font-bold text-gray-900 text-sm md:text-base">Aissatou Camara</h4>
-                <p className="text-xs text-yellow-500 font-medium flex items-center gap-1">★ 5.0 <span className="text-gray-400 font-normal">- moto</span></p>
+                <h4 className="font-bold text-gray-900 text-sm md:text-base">{order.sender_address?.name || 'Client Anonyme'}</h4>
+                <p className="text-xs text-sewa-red font-medium flex items-center gap-1">Propriétaire du compte</p>
               </div>
             </div>
             <div className="flex gap-2 shrink-0">
@@ -198,28 +191,13 @@ export default function TrackingPage() {
             </div>
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row gap-3">
-            {order.status === 'pending' && (
-              <button onClick={() => handleUpdateStatus('confirmed')} className="flex-1 bg-gray-900 text-white rounded-xl py-3 flex items-center justify-center gap-2 font-bold hover:bg-gray-800 transition-colors">
-                Accepter (Test)
-              </button>
-            )}
-            {order.status === 'confirmed' && (
-              <button onClick={() => handleUpdateStatus('en_route')} className="flex-1 bg-blue-500 text-white rounded-xl py-3 flex items-center justify-center gap-2 font-bold hover:bg-blue-600 transition-colors">
-                Mettre en route (Test)
-              </button>
-            )}
-            {order.status === 'en_route' && (
-              <button onClick={() => handleUpdateStatus('delivered')} className="flex-1 bg-green-500 text-white rounded-xl py-3 flex items-center justify-center gap-2 font-bold shadow-md shadow-green-500/20 hover:bg-green-600 transition-colors">
-                <CheckCircle2 className="w-5 h-5" /> Colis reçu
-              </button>
-            )}
-            {order.status !== 'delivered' && order.status !== 'cancelled' && (
-              <button onClick={() => handleUpdateStatus('cancelled')} className="flex-1 bg-white border border-gray-200 text-red-500 rounded-xl py-3 flex items-center justify-center gap-2 font-bold hover:bg-red-50 transition-colors">
-                <X className="w-5 h-5" /> Annuler (Test)
-              </button>
-            )}
+          {/* Footer Status Message */}
+          <div className="bg-gray-50 rounded-xl p-4 text-center border border-gray-100 mt-auto">
+            {order.status === 'pending' && <p className="text-sm font-bold text-gray-600 flex items-center justify-center gap-2"><Loader2 className="w-4 h-4 animate-spin text-sewa-red"/> En attente de prise en charge par un coursier...</p>}
+            {order.status === 'confirmed' && <p className="text-sm font-bold text-gray-600">Votre coursier se prépare pour le retrait.</p>}
+            {order.status === 'en_route' && <p className="text-sm font-bold text-blue-600">Le livreur est en route vers la destination !</p>}
+            {order.status === 'delivered' && <p className="text-sm font-bold text-green-600 flex items-center justify-center gap-2"><CheckCircle2 className="w-5 h-5"/> Livraison terminée avec succès !</p>}
+            {order.status === 'cancelled' && <p className="text-sm font-bold text-red-600 flex items-center justify-center gap-2"><X className="w-5 h-5"/> Commande annulée.</p>}
           </div>
         </div>
       </div>

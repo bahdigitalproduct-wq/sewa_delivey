@@ -74,7 +74,7 @@ export default function Home() {
             transition={{ duration: 0.8, ease: "easeOut" }}
           >
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-white leading-tight mb-4 md:mb-6 tracking-tight">
-              Sewa Delivery : Votre bonheur livré avec le sourire
+              Sewa Delivery : <span className="text-sewa-yellow">Votre bonheur</span> livré avec le sourire
             </h1>
             <p className="text-base md:text-xl text-gray-200 mb-8 md:mb-10 max-w-xl font-medium">
               La solution logistique instantanée, joyeuse et impeccablement organisée pour tous vos envois.
@@ -101,7 +101,7 @@ export default function Home() {
           </motion.div>
           
           <motion.div 
-            className="grid grid-cols-1 md:grid-cols-3 gap-5 md:gap-8 max-w-5xl mx-auto"
+            className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 max-w-5xl mx-auto"
             variants={staggerContainer}
             initial="initial"
             whileInView="whileInView"
@@ -109,45 +109,47 @@ export default function Home() {
           >
             {/* Card 1 */}
             <Link href="/commander" className="block h-full group">
-              <motion.div variants={fadeInUp} className="bg-sewa-red text-white rounded-3xl p-6 md:p-8 shadow-xl shadow-red-500/20 hover:-translate-y-2 transition-transform duration-300 flex flex-col h-full cursor-pointer">
-                <div className="w-12 h-12 md:w-14 md:h-14 bg-white/20 rounded-2xl flex items-center justify-center mb-5 md:mb-8 transform group-hover:scale-110 transition-transform">
-                  <FileText className="w-6 h-6 md:w-7 md:h-7 text-white" />
+              <motion.div variants={fadeInUp} className="bg-sewa-red text-white rounded-3xl p-5 md:p-6 shadow-xl shadow-red-500/20 hover:-translate-y-2 transition-transform duration-300 flex flex-col h-full cursor-pointer">
+                <div className="w-10 h-10 md:w-12 md:h-12 bg-white/20 rounded-2xl flex items-center justify-center mb-4 md:mb-5 transform group-hover:scale-110 transition-transform">
+                  <FileText className="w-5 h-5 md:w-6 md:h-6 text-white" />
                 </div>
-                <h3 className="text-xl md:text-2xl font-bold mb-3 md:mb-4">Envoyer un Colis</h3>
-                <p className="text-red-100 mb-8 md:mb-12 text-sm md:text-base flex-grow font-medium leading-relaxed">Formulaire détaillé pour vos envois importants. Suivi complet garanti.</p>
-                <div className="flex items-center justify-between font-bold text-sm tracking-wider uppercase group-hover:underline">
-                  <span>Remplir le formulaire</span> <ArrowRight className="w-5 h-5 transform group-hover:translate-x-2 transition-transform" />
+                <h3 className="text-lg md:text-xl font-bold mb-2 md:mb-3">Envoyer un Colis</h3>
+                <p className="text-red-100 mb-6 md:mb-8 text-xs md:text-sm flex-grow font-medium leading-relaxed">Formulaire détaillé pour vos envois importants. Suivi complet garanti.</p>
+                <div className="flex items-center justify-between font-bold text-xs md:text-sm tracking-wider uppercase group-hover:underline">
+                  <span>Remplir le formulaire</span> <ArrowRight className="w-4 h-4 md:w-5 md:h-5 transform group-hover:translate-x-2 transition-transform" />
                 </div>
               </motion.div>
             </Link>
 
             {/* Card 2 - WhatsApp (Functional) */}
-            <motion.div variants={fadeInUp} onClick={handleWhatsAppOrder} className="bg-sewa-yellow text-gray-900 rounded-3xl p-6 md:p-8 shadow-xl shadow-yellow-500/20 hover:-translate-y-2 transition-transform duration-300 flex flex-col h-full cursor-pointer relative overflow-hidden group">
+            <motion.div variants={fadeInUp} onClick={handleWhatsAppOrder} className="bg-sewa-yellow text-gray-900 rounded-3xl p-5 md:p-6 shadow-xl shadow-yellow-500/20 hover:-translate-y-2 transition-transform duration-300 flex flex-col h-full cursor-pointer relative overflow-hidden group">
               <div className="absolute inset-0 bg-yellow-400 opacity-0 group-hover:opacity-20 transition-opacity"></div>
-              <div className="w-12 h-12 md:w-14 md:h-14 bg-black/5 rounded-2xl flex items-center justify-center mb-5 md:mb-8 relative z-10 transform group-hover:scale-110 transition-transform">
-                <MessageCircle className="w-6 h-6 md:w-7 md:h-7 text-gray-900" />
+              <div className="w-10 h-10 md:w-12 md:h-12 bg-black/5 rounded-2xl flex items-center justify-center mb-4 md:mb-5 relative z-10 transform group-hover:scale-110 transition-transform">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 md:w-6 md:h-6 text-[#25D366]">
+                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/>
+                </svg>
               </div>
-              <h3 className="text-xl md:text-2xl font-bold mb-3 md:mb-4 relative z-10">Commander via WhatsApp</h3>
-              <p className="text-gray-800 mb-8 md:mb-12 text-sm md:text-base flex-grow relative z-10 font-medium leading-relaxed">Rapide & Position GPS en un clic. La solution la plus populaire.</p>
-              <div className="flex items-center justify-between font-bold text-sm tracking-wider uppercase relative z-10 text-gray-900">
+              <h3 className="text-lg md:text-xl font-bold mb-2 md:mb-3 relative z-10">Commander via WhatsApp</h3>
+              <p className="text-gray-800 mb-6 md:mb-8 text-xs md:text-sm flex-grow relative z-10 font-medium leading-relaxed">Rapide & Position GPS en un clic. La solution la plus populaire.</p>
+              <div className="flex items-center justify-between font-bold text-xs md:text-sm tracking-wider uppercase relative z-10 text-gray-900">
                 <span>{isLocating ? "Géolocalisation..." : "Ouvrir WhatsApp"}</span> 
                 {isLocating ? (
-                  <span className="animate-spin w-5 h-5 border-2 border-gray-900 border-t-transparent rounded-full"></span>
+                  <span className="animate-spin w-4 h-4 border-2 border-gray-900 border-t-transparent rounded-full"></span>
                 ) : (
-                  <ArrowRight className="w-5 h-5 transform group-hover:translate-x-2 transition-transform" />
+                  <ArrowRight className="w-4 h-4 md:w-5 md:h-5 transform group-hover:translate-x-2 transition-transform" />
                 )}
               </div>
             </motion.div>
 
             {/* Card 3 - Call (Functional) */}
-            <motion.div variants={fadeInUp} className="bg-white border border-gray-100 text-gray-900 rounded-3xl p-6 md:p-8 shadow-xl shadow-gray-200/50 hover:-translate-y-2 transition-transform duration-300 flex flex-col h-full group">
-              <div className="w-12 h-12 md:w-14 md:h-14 bg-gray-50 rounded-2xl flex items-center justify-center mb-5 md:mb-8 transform group-hover:scale-110 transition-transform">
-                <PhoneCall className="w-6 h-6 md:w-7 md:h-7 text-sewa-red" />
+            <motion.div variants={fadeInUp} className="bg-white border border-gray-100 text-gray-900 rounded-3xl p-5 md:p-6 shadow-xl shadow-gray-200/50 hover:-translate-y-2 transition-transform duration-300 flex flex-col h-full group">
+              <div className="w-10 h-10 md:w-12 md:h-12 bg-gray-50 rounded-2xl flex items-center justify-center mb-4 md:mb-5 transform group-hover:scale-110 transition-transform">
+                <PhoneCall className="w-5 h-5 md:w-6 md:h-6 text-sewa-red" />
               </div>
-              <h3 className="text-xl md:text-2xl font-bold mb-3 md:mb-4">Appeler un agent</h3>
-              <p className="text-gray-500 mb-8 md:mb-12 text-sm md:text-base flex-grow font-medium leading-relaxed">Assistance directe et humaine pour vos besoins spécifiques.</p>
-              <a href={`tel:${phoneNumber}`} className="flex items-center justify-between font-bold text-sewa-red text-sm tracking-wider uppercase group-hover:underline">
-                <span>Nous contacter</span> <ArrowRight className="w-5 h-5 transform group-hover:translate-x-2 transition-transform" />
+              <h3 className="text-lg md:text-xl font-bold mb-2 md:mb-3">Appeler un agent</h3>
+              <p className="text-gray-500 mb-6 md:mb-8 text-xs md:text-sm flex-grow font-medium leading-relaxed">Assistance directe et humaine pour vos besoins spécifiques.</p>
+              <a href={`tel:${phoneNumber}`} className="flex items-center justify-between font-bold text-sewa-red text-xs md:text-sm tracking-wider uppercase group-hover:underline">
+                <span>Nous contacter</span> <ArrowRight className="w-4 h-4 md:w-5 md:h-5 transform group-hover:translate-x-2 transition-transform" />
               </a>
             </motion.div>
           </motion.div>
@@ -158,7 +160,7 @@ export default function Home() {
       <section id="tarifs" className="py-16 md:py-24 bg-white">
         <div className="container mx-auto px-4 md:px-6 max-w-5xl">
           <motion.div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 md:mb-12 gap-3" {...fadeInUp}>
-            <h2 className="text-2xl md:text-3xl font-extrabold flex items-center gap-3 tracking-tight">
+            <h2 className="text-2xl md:text-3xl font-extrabold text-gray-900 flex items-center gap-3 tracking-tight">
               <span className="text-sewa-red bg-red-50 p-2 rounded-xl"><MapPin className="w-6 h-6" /></span> 
               Nos zones de bonheur
             </h2>
@@ -177,8 +179,8 @@ export default function Home() {
               { title: "Zone moyenne", desc: "5-15 KM", price: "25 000 GNF" },
               { title: "Zone éloignée", desc: "15+ KM", price: "45 000 GNF" },
             ].map((zone, i) => (
-              <motion.div key={i} variants={fadeInUp} className="bg-gray-50 rounded-2xl p-4 md:p-6 flex items-center justify-between hover:bg-gray-100 transition-colors border border-gray-100/50">
-                <div className="flex items-center gap-3 md:gap-4">
+              <motion.div key={i} variants={fadeInUp} className="bg-gray-50 rounded-2xl p-4 md:p-5 flex items-center justify-between gap-2 hover:bg-gray-100 transition-colors border border-gray-100/50 transform-gpu">
+                <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm text-gray-500 shrink-0">
                     <MapPin className="w-4 h-4 md:w-5 md:h-5" />
                   </div>
@@ -187,15 +189,15 @@ export default function Home() {
                     <p className="text-xs text-gray-500 font-medium">{zone.desc}</p>
                   </div>
                 </div>
-                <span className="text-lg md:text-xl font-black text-sewa-red whitespace-nowrap">{zone.price}</span>
+                <span className="text-base sm:text-lg md:text-xl font-black text-sewa-red shrink-0">{zone.price}</span>
               </motion.div>
             ))}
 
-            <motion.div variants={fadeInUp} className="bg-red-50 border border-red-100 rounded-2xl p-4 md:p-6 flex items-center justify-between hover:bg-red-100 transition-colors shadow-sm shadow-red-100/50 relative overflow-hidden">
+            <motion.div variants={fadeInUp} className="bg-red-50 border border-red-100 rounded-2xl p-4 md:p-5 flex items-center justify-between gap-2 hover:bg-red-100 transition-colors shadow-sm shadow-red-100/50 relative overflow-hidden transform-gpu">
               <div className="absolute -right-4 -top-4 text-sewa-red/10 w-24 h-24">
                 <Zap className="w-full h-full" />
               </div>
-              <div className="flex items-center gap-3 md:gap-4 relative z-10">
+              <div className="flex items-center gap-3 relative z-10">
                 <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm text-sewa-red shrink-0">
                   <Zap className="w-4 h-4 md:w-5 md:h-5" />
                 </div>
@@ -204,7 +206,7 @@ export default function Home() {
                   <p className="text-[10px] md:text-xs text-sewa-red/80 uppercase font-bold tracking-wider">Livraison immédiate</p>
                 </div>
               </div>
-              <span className="text-lg md:text-xl font-black text-sewa-red whitespace-nowrap relative z-10">60 000 GNF</span>
+              <span className="text-base sm:text-lg md:text-xl font-black text-sewa-red relative z-10">60 000 GNF</span>
             </motion.div>
           </motion.div>
         </div>
@@ -243,8 +245,8 @@ export default function Home() {
         <div className="container mx-auto px-4 md:px-6 max-w-5xl">
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 mb-8 md:mb-10">
             <div className="md:col-span-1">
-              <div className="flex items-center gap-2 mb-4">
-                <Image src="/logo.png" alt="Sewa Delivery Logo" width={32} height={32} className="object-contain drop-shadow-sm" />
+              <div className="flex items-center gap-3 mb-4">
+                <Image src="/logo.png" alt="Sewa Delivery Logo" width={48} height={48} className="object-contain drop-shadow-sm" />
                 <span className="text-xl font-black text-gray-900 tracking-tight">Sewa Delivery</span>
               </div>
               <p className="text-sm text-gray-500 pr-4 font-medium leading-relaxed">Fast. Reliable. Joyful. L&apos;excellence de la logistique à portée de main.</p>
