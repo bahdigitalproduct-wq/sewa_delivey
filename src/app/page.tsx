@@ -179,7 +179,7 @@ export default function Home() {
               { title: "Zone moyenne", desc: "5-15 KM", price: "25 000 GNF" },
               { title: "Zone éloignée", desc: "15+ KM", price: "45 000 GNF" },
             ].map((zone, i) => (
-              <motion.div key={i} variants={fadeInUp} className="bg-gray-50 rounded-2xl p-4 md:p-5 flex items-center justify-between gap-2 hover:bg-gray-100 transition-colors border border-gray-100/50 transform-gpu">
+              <motion.div key={i} variants={fadeInUp} className="bg-gray-50 rounded-2xl p-4 md:p-5 flex items-center justify-between gap-2 hover:bg-gray-100 transition-colors border border-gray-100/50">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm text-gray-500 shrink-0">
                     <MapPin className="w-4 h-4 md:w-5 md:h-5" />
@@ -193,7 +193,7 @@ export default function Home() {
               </motion.div>
             ))}
 
-            <motion.div variants={fadeInUp} className="bg-red-50 border border-red-100 rounded-2xl p-4 md:p-5 flex items-center justify-between gap-2 hover:bg-red-100 transition-colors shadow-sm shadow-red-100/50 relative overflow-hidden transform-gpu">
+            <motion.div variants={fadeInUp} className="bg-red-50 border border-red-100 rounded-2xl p-4 md:p-5 flex items-center justify-between gap-2 hover:bg-red-100 transition-colors shadow-sm shadow-red-100/50 relative overflow-hidden">
               <div className="absolute -right-4 -top-4 text-sewa-red/10 w-24 h-24">
                 <Zap className="w-full h-full" />
               </div>
