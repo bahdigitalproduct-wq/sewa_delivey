@@ -108,9 +108,9 @@ export default function TrackingPage() {
       {/* Map Section (Top on mobile, Left on desktop) */}
       <div className="h-[45vh] md:h-auto md:flex-1 relative z-0">
         <MapComponent 
-          pickup={{ lat: 9.5375, lng: -13.6771 }} 
-          delivery={{ lat: 9.6, lng: -13.62 }} 
-          driver={{ lat: 9.56, lng: -13.65 }} 
+          pickup={(order.sender_address?.lat && order.sender_address?.lng) ? { lat: order.sender_address.lat, lng: order.sender_address.lng } : { lat: 9.5375, lng: -13.6771 }} 
+          delivery={(order.receiver_address?.lat && order.receiver_address?.lng) ? { lat: order.receiver_address.lat, lng: order.receiver_address.lng } : { lat: 9.6, lng: -13.62 }} 
+          driver={order.driver_location ? { lat: order.driver_location.lat, lng: order.driver_location.lng } : { lat: 9.56, lng: -13.65 }} 
         />
         <div className="absolute top-4 left-4 z-[400] md:hidden">
           <Link href="/commander" className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-md">

@@ -1,10 +1,29 @@
 'use client';
 
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import { useEffect } from 'react';
 import Link from 'next/link';
+
+function MapUpdater({ pickup, delivery }: any) {
+  const map = useMap();
+  useEffect(() => {
+    const points: L.LatLngExpression[] = [];
+    if (pickup) points.push([pickup.lat, pickup.lng]);
+    if (delivery) points.push([delivery.lat, delivery.lng]);
+
+    if (points.length > 1) {
+      const bounds = L.latLngBounds(points);
+      map.fitBounds(bounds, { padding: [50, 50] });
+    } else if (points.length === 1) {
+      map.setView(points[0], 14);
+    } else {
+      map.setView([9.55, -13.65], 12);
+    }
+  }, [pickup, delivery, map]);
+  return null;
+}
 
 // Fonction utilitaire pour générer des coordonnées fictives autour de Conakry
 // (Puisque les vraies coordonnées GPS ne sont pas encore stockées en BDD)
@@ -23,7 +42,7 @@ const getMockCoordinates = (str: string) => {
   return [9.52 + latOffset, -13.71 + lngOffset];
 };
 
-export default function LiveRadarMap({ orders }: { orders: any[] }) {
+export default function LiveRadarMap({ orders, selectedOrder }: { orders: any[], selectedOrder?: any | null }) {
   useEffect(() => {
     delete (L.Icon.Default.prototype as any)._getIconUrl;
     L.Icon.Default.mergeOptions({
@@ -45,15 +64,29 @@ export default function LiveRadarMap({ orders }: { orders: any[] }) {
     iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
   });
 
+  const deliveryIcon = new L.Icon({
+    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+    iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
+  });
+
+  const pickupIcon = new L.Icon({
+    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+    iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
+  });
+
   return (
     <MapContainer center={[9.55, -13.65]} zoom={12} style={{ height: '100%', width: '100%' }} zoomControl={false}>
       <TileLayer
         url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
       />
-      
-      {orders.filter(o => o.status !== 'delivered' && o.status !== 'cancelled').map((order) => {
-        const coords = getMockCoordinates(order.id);
+      {!selectedOrder && <MapUpdater pickup={null} delivery={null} />}
+      {!selectedOrder && orders.filter(o => o.status !== 'delivered' && o.status !== 'cancelled').map((order) => {
+        const coords = (order.sender_address?.lat && order.sender_address?.lng) 
+                       ? [order.sender_address.lat, order.sender_address.lng] 
+                       : getMockCoordinates(order.id);
         const icon = order.status === 'pending' ? pendingIcon : enRouteIcon;
         
         return (
@@ -70,6 +103,32 @@ export default function LiveRadarMap({ orders }: { orders: any[] }) {
           </Marker>
         );
       })}
+
+      {selectedOrder && (() => {
+        const pickupCoords = (selectedOrder.sender_address?.lat && selectedOrder.sender_address?.lng) 
+          ? { lat: selectedOrder.sender_address.lat, lng: selectedOrder.sender_address.lng } 
+          : { lat: getMockCoordinates(selectedOrder.id)[0], lng: getMockCoordinates(selectedOrder.id)[1] };
+          
+        const deliveryCoords = (selectedOrder.receiver_address?.lat && selectedOrder.receiver_address?.lng) 
+          ? { lat: selectedOrder.receiver_address.lat, lng: selectedOrder.receiver_address.lng } 
+          : { lat: 9.6, lng: -13.62 }; // Mock destination if none
+
+        return (
+          <>
+            <MapUpdater pickup={pickupCoords} delivery={deliveryCoords} />
+            <Marker position={[pickupCoords.lat, pickupCoords.lng]} icon={pickupIcon}>
+              <Popup>Retrait: {selectedOrder.sender_address.address}</Popup>
+            </Marker>
+            <Marker position={[deliveryCoords.lat, deliveryCoords.lng]} icon={deliveryIcon}>
+              <Popup>Livraison: {selectedOrder.receiver_address.address}</Popup>
+            </Marker>
+            <Polyline positions={[
+              [pickupCoords.lat, pickupCoords.lng],
+              [deliveryCoords.lat, deliveryCoords.lng]
+            ]} color="red" dashArray="5, 10" />
+          </>
+        );
+      })()}
     </MapContainer>
   );
 }

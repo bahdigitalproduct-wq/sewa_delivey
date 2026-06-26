@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { Loader2, Map as MapIcon, Navigation2 } from 'lucide-react';
+import { Loader2, Map as MapIcon, Navigation2, List } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 
@@ -20,6 +20,10 @@ export default function RadarPage() {
   const supabase = createClient();
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  
+  // État pour la vue mobile (bascule entre la carte et la liste)
+  const [mobileView, setMobileView] = useState<'map' | 'list'>('map');
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -52,20 +56,37 @@ export default function RadarPage() {
 
   return (
     <div className="h-[calc(100vh-4rem)] flex flex-col animate-in fade-in duration-500">
-      <div className="mb-6">
-        <h1 className="text-3xl font-black text-gray-900 tracking-tight flex items-center gap-3">
-          <MapIcon className="w-8 h-8 text-sewa-red" />
+      <div className="mb-4 lg:mb-6">
+        <h1 className="text-2xl lg:text-3xl font-black text-gray-900 tracking-tight flex items-center gap-3">
+          <MapIcon className="w-6 h-6 lg:w-8 lg:h-8 text-sewa-red" />
           Live Radar
         </h1>
-        <p className="text-gray-500 font-medium mt-1">Supervisez la flotte et les commandes en temps réel sur la carte.</p>
+        <p className="text-sm lg:text-base text-gray-500 font-medium mt-1">Supervisez la flotte et les commandes en temps réel.</p>
       </div>
 
-      <div className="flex-1 bg-white p-4 rounded-3xl shadow-sm border border-gray-100 flex gap-4 overflow-hidden relative">
+      <div className="flex-1 bg-white p-2 lg:p-4 rounded-3xl shadow-sm border border-gray-100 flex gap-4 overflow-hidden relative">
+        
+        {/* Toggle Mobile Flottant */}
+        <div className="lg:hidden absolute bottom-4 left-1/2 -translate-x-1/2 z-[1000] bg-white rounded-full shadow-2xl border border-gray-200 p-1 flex gap-1 font-bold text-sm">
+          <button 
+            onClick={() => setMobileView('map')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all ${mobileView === 'map' ? 'bg-sewa-red text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}
+          >
+            <MapIcon className="w-4 h-4" /> Carte
+          </button>
+          <button 
+            onClick={() => setMobileView('list')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all ${mobileView === 'list' ? 'bg-sewa-red text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}
+          >
+            <List className="w-4 h-4" /> Liste
+          </button>
+        </div>
+
         {/* Carte Leaflet */}
-        <div className="flex-1 h-full rounded-2xl overflow-hidden relative z-0 border border-gray-200">
-          {!loading && <LiveRadarMap orders={activeOrders} />}
+        <div className={`flex-1 h-full rounded-2xl overflow-hidden relative z-0 border border-gray-200 ${mobileView === 'list' ? 'hidden lg:block' : 'block'}`}>
+          {!loading && <LiveRadarMap orders={activeOrders} selectedOrder={activeOrders.find(o => o.id === selectedOrderId)} />}
           
-          <div className="absolute top-4 left-4 z-[1000] bg-white/90 backdrop-blur-md p-3 rounded-2xl shadow-lg border border-gray-100">
+          <div className="absolute top-4 left-4 z-[900] bg-white/90 backdrop-blur-md p-3 rounded-2xl shadow-lg border border-gray-100">
              <div className="flex items-center gap-2 mb-2">
                <div className="w-3 h-3 bg-orange-500 rounded-full shadow-sm shadow-orange-500/50"></div>
                <span className="text-xs font-bold text-gray-700">En attente ({activeOrders.filter(o=>o.status==='pending').length})</span>
@@ -78,17 +99,29 @@ export default function RadarPage() {
         </div>
 
         {/* Panneau latéral des courses actives */}
-        <div className="w-80 h-full overflow-y-auto bg-gray-50/50 rounded-2xl p-4 border border-gray-100 hidden lg:block">
-          <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
-            <Navigation2 className="w-4 h-4 text-sewa-red" />
-            Courses actives ({activeOrders.length})
-          </h3>
+        <div className={`w-full lg:w-80 h-full overflow-y-auto bg-gray-50/50 rounded-2xl p-4 border border-gray-100 pb-20 lg:pb-4 ${mobileView === 'map' ? 'hidden lg:block' : 'block'}`}>
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="font-bold text-gray-900 flex items-center gap-2">
+              <Navigation2 className="w-4 h-4 text-sewa-red" />
+              Courses actives ({activeOrders.length})
+            </h3>
+            {selectedOrderId && (
+              <button onClick={() => setSelectedOrderId(null)} className="text-[10px] text-sewa-red font-bold uppercase bg-red-50 hover:bg-red-100 px-2 py-1 rounded transition-colors">
+                Vue globale
+              </button>
+            )}
+          </div>
           <div className="space-y-3">
             {activeOrders.map(order => (
-              <div key={order.id} className="block bg-white p-3 rounded-xl shadow-sm border border-gray-100 hover:border-sewa-red/30 transition-colors relative">
+              <div 
+                key={order.id} 
+                onClick={() => setSelectedOrderId(order.id)}
+                className={`block bg-white p-3 rounded-xl shadow-sm border cursor-pointer hover:border-sewa-red/30 transition-colors relative ${selectedOrderId === order.id ? 'border-sewa-red ring-2 ring-red-100' : 'border-gray-100'}`}
+              >
                 <div className="flex justify-between items-center mb-3">
                   <select 
                     value={order.status}
+                    onClick={(e) => e.stopPropagation()}
                     onChange={(e) => updateOrderStatus(order.id, e.target.value)}
                     className={`text-[10px] font-bold uppercase px-2 py-1.5 rounded-md cursor-pointer outline-none border-none appearance-none ${
                       order.status === 'pending' ? 'bg-orange-100 text-orange-700' : 
@@ -102,15 +135,19 @@ export default function RadarPage() {
                     <option value="delivered">📦 Livré</option>
                     <option value="cancelled">❌ Annulé</option>
                   </select>
-                  <Link href={`/suivi/${order.id}`} className="text-[10px] bg-gray-100 hover:bg-gray-200 text-gray-700 px-2 py-1 rounded transition-colors font-bold">
+                  <Link 
+                    href={`/suivi/${order.id}`} 
+                    onClick={(e) => e.stopPropagation()}
+                    className="text-[10px] bg-gray-100 hover:bg-gray-200 text-gray-700 px-2 py-1 rounded transition-colors font-bold"
+                  >
                     Détails
                   </Link>
                 </div>
                 <div className="mb-1 flex justify-between items-end">
-                   <p className="text-sm font-bold text-gray-900 line-clamp-1">{order.receiver_address.address}</p>
-                   <span className="text-xs font-bold text-gray-900 whitespace-nowrap ml-2">{Number(order.price).toLocaleString('fr-FR')} GNF</span>
+                   <p className="text-sm font-bold text-gray-900 line-clamp-1">{order.receiver_address?.address || 'Adresse inconnue'}</p>
+                   <span className="text-xs font-bold text-gray-900 whitespace-nowrap ml-2">{Number(order.price || 0).toLocaleString('fr-FR')} GNF</span>
                 </div>
-                <p className="text-xs text-gray-500 line-clamp-1">De: {order.sender_address.address}</p>
+                <p className="text-xs text-gray-500 line-clamp-1">De: {order.sender_address?.address || 'Inconnu'}</p>
               </div>
             ))}
             {activeOrders.length === 0 && !loading && (

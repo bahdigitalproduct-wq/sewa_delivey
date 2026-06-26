@@ -13,26 +13,30 @@ export default function Home() {
 
   const handleWhatsAppOrder = () => {
     setIsLocating(true);
+    
+    const openWhatsApp = (lat?: number, lng?: number) => {
+      setIsLocating(false);
+      let message = `Bonjour Sewa Delivery ! 👋\nJe souhaite commander un coursier.`;
+      if (lat && lng) {
+        message += `\n\n📍 Voici ma position exacte :\nhttps://www.google.com/maps?q=${lat},${lng}`;
+      }
+      window.open(`https://wa.me/${phoneNumber.replace('+', '')}?text=${encodeURIComponent(message)}`, '_blank');
+    };
+
     if ("geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          setIsLocating(false);
-          const { latitude, longitude } = position.coords;
-          const message = encodeURIComponent(`Bonjour Sewa Delivery ! 👋\nJe souhaite commander un coursier.\n\n📍 Voici ma position exacte :\nhttps://www.google.com/maps?q=${latitude},${longitude}`);
-          window.open(`https://wa.me/${phoneNumber.replace('+', '')}?text=${message}`, '_blank');
+          openWhatsApp(position.coords.latitude, position.coords.longitude);
         },
         (error) => {
-          setIsLocating(false);
-          alert("Impossible de récupérer votre position. Nous allons ouvrir WhatsApp normalement.");
-          const message = encodeURIComponent(`Bonjour Sewa Delivery ! 👋\nJe souhaite commander un coursier.`);
-          window.open(`https://wa.me/${phoneNumber.replace('+', '')}?text=${message}`, '_blank');
+          console.warn("Erreur de géolocalisation:", error);
+          // Fallback direct sans alert pour une expérience fluide
+          openWhatsApp();
         },
-        { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+        { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 }
       );
     } else {
-      setIsLocating(false);
-      const message = encodeURIComponent(`Bonjour Sewa Delivery ! 👋\nJe souhaite commander un coursier.`);
-      window.open(`https://wa.me/${phoneNumber.replace('+', '')}?text=${message}`, '_blank');
+      openWhatsApp();
     }
   };
 

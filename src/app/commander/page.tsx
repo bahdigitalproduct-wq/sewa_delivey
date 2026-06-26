@@ -44,6 +44,7 @@ export default function CommanderPage() {
   const [distance, setDistance] = useState(5);
   const [urgency, setUrgency] = useState<'standard' | 'express' | 'vip'>('standard');
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'orange_money' | 'mobile_money'>('cash');
+  const [isAuthChecking, setIsAuthChecking] = useState(true);
   const [isLocating, setIsLocating] = useState(false);
   const [locationError, setLocationError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -60,6 +61,18 @@ export default function CommanderPage() {
     };
     fetchSettings();
   }, [supabase]);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        router.push('/login?redirect=/commander');
+      } else {
+        setIsAuthChecking(false);
+      }
+    };
+    checkAuth();
+  }, [supabase, router]);
 
   const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<OrderFormValues>({
     resolver: zodResolver(orderSchema)
@@ -166,14 +179,18 @@ export default function CommanderPage() {
       const sender_address = {
         address: data.pickup_address,
         name: data.sender_name,
-        phone: data.sender_phone
+        phone: data.sender_phone,
+        lat: pickupCoords?.lat,
+        lng: pickupCoords?.lng
       };
 
       const receiver_address = {
         address: data.delivery_address,
         name: data.receiver_name,
         phone: data.receiver_phone,
-        description: data.package_description || ""
+        description: data.package_description || "",
+        lat: deliveryCoords?.lat,
+        lng: deliveryCoords?.lng
       };
 
       const { data: insertedOrder, error } = await supabase.from('orders').insert({
@@ -202,6 +219,17 @@ export default function CommanderPage() {
     setPickupCoords(coords);
     setValue('pickup_address', `Position: ${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)}`);
   };
+
+  if (isAuthChecking) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="w-10 h-10 animate-spin text-sewa-red" />
+          <p className="text-gray-500 font-bold text-sm">Vérification de la connexion...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex-1 flex flex-col md:flex-row bg-gray-50 pb-20 md:pb-0 overflow-hidden min-h-screen font-sans">

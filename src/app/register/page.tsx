@@ -14,8 +14,17 @@ export default function RegisterPage() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [redirectPath, setRedirectPath] = useState('/');
   const router = useRouter();
   const supabase = createClient();
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const urlRedirect = params.get('redirect');
+    if (urlRedirect) {
+      setRedirectPath(urlRedirect);
+    }
+  }, []);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,7 +46,7 @@ export default function RegisterPage() {
       if (error) throw error;
 
       if (data.session) {
-        router.push('/');
+        router.push(redirectPath);
         router.refresh();
       } else {
         setError("Inscription réussie. Vérifiez votre boîte mail si vous avez activé la confirmation par email.");
@@ -180,7 +189,7 @@ export default function RegisterPage() {
             
             <div className="mt-4 text-center">
               <span className="text-sm text-gray-600">Déjà un compte ? </span>
-              <Link href="/login" className="text-sm font-bold text-sewa-red hover:text-red-700 transition-colors">
+              <Link href={`/login${redirectPath !== '/' ? `?redirect=${redirectPath}` : ''}`} className="text-sm font-bold text-sewa-red hover:text-red-700 transition-colors">
                 Se connecter
               </Link>
             </div>

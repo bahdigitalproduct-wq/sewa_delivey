@@ -12,6 +12,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [redirectPath, setRedirectPath] = useState('/');
   const router = useRouter();
   const supabase = createClient();
 
@@ -21,6 +22,10 @@ export default function LoginPage() {
     const urlError = params.get('error');
     if (urlError) {
       setError(urlError);
+    }
+    const urlRedirect = params.get('redirect');
+    if (urlRedirect) {
+      setRedirectPath(urlRedirect);
     }
   }, []);
 
@@ -38,7 +43,7 @@ export default function LoginPage() {
       if (error) throw error;
 
       if (data.session) {
-        router.push('/');
+        router.push(redirectPath);
         router.refresh();
       }
     } catch (err: any) {
@@ -135,7 +140,7 @@ export default function LoginPage() {
             
             <div className="mt-6 text-center">
               <span className="text-sm text-gray-600">Pas encore de compte ? </span>
-              <Link href="/register" className="text-sm font-bold text-sewa-red hover:text-red-700 transition-colors">
+              <Link href={`/register${redirectPath !== '/' ? `?redirect=${redirectPath}` : ''}`} className="text-sm font-bold text-sewa-red hover:text-red-700 transition-colors">
                 S'inscrire
               </Link>
             </div>
