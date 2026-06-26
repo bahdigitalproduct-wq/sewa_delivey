@@ -7,6 +7,16 @@ import BottomNav from "@/components/BottomNav";const inter = Inter({ subsets: ["
 export const metadata: Metadata = {
   title: "Sewa Delivery | Votre bonheur livré avec le sourire",
   description: "La solution logistique instantanée, joyeuse et impeccablement organisée pour tous vos envois à Conakry.",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Sewa Delivery",
+  },
+};
+
+export const viewport = {
+  themeColor: "#E3000F",
 };
 
 export default function RootLayout({

@@ -1,0 +1,22 @@
+{
+  "name": "Sewa Delivery",
+  "short_name": "Sewa",
+  "description": "La solution logistique instantanée, joyeuse et impeccablement organisée pour tous vos envois à Conakry.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#E3000F",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
